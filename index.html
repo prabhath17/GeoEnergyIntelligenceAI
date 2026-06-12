@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GeoEnergy Intelligence AI | Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode:"class",
+  theme:{ extend:{
+    colors:{"on-tertiary-fixed-variant":"#5f4100","on-tertiary-container":"#4d3500","primary":"#a2c9ff","on-error-container":"#ffdad6","surface-container-highest":"#2d363e","on-background":"#dae3ee","background":"#0b141c","on-error":"#690005","inverse-primary":"#0060aa","inverse-on-surface":"#29313a","surface-container":"#182028","surface":"#0b141c","tertiary-container":"#d29922","inverse-surface":"#dae3ee","secondary":"#c3c6cf","primary-container":"#58a6ff","surface-variant":"#2d363e","primary-fixed":"#d3e4ff","secondary-fixed":"#dfe2eb","on-primary-container":"#003a6b","surface-tint":"#a2c9ff","secondary-container":"#454950","surface-container-lowest":"#060f16","outline-variant":"#414752","on-surface-variant":"#c0c7d4","tertiary-fixed":"#ffdeaa","primary-fixed-dim":"#a2c9ff","on-secondary":"#2d3137","error-container":"#93000a","surface-bright":"#313a43","surface-dim":"#0b141c","on-surface":"#dae3ee","on-secondary-container":"#b5b8c1","on-secondary-fixed-variant":"#43474e","on-tertiary":"#422c00","on-primary":"#00315c","on-secondary-fixed":"#181c22","on-primary-fixed-variant":"#004882","surface-container-high":"#222b33","tertiary":"#fabc45","on-tertiary-fixed":"#271900","on-primary-fixed":"#001c38","tertiary-fixed-dim":"#fabc45","surface-container-low":"#141c24","error":"#ffb4ab","outline":"#8b919d","secondary-fixed-dim":"#c3c6cf"},
+    borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    spacing:{"xs":"4px","lg":"24px","md":"16px","xl":"40px","unit":"4px","sm":"8px","container-max":"1440px","gutter":"16px"},
+    fontFamily:{"headline-md":["IBM Plex Sans"],"body-md":["IBM Plex Sans"],"mono-data":["IBM Plex Mono"],"label-md":["IBM Plex Sans"],"display-lg":["IBM Plex Sans"],"body-lg":["IBM Plex Sans"],"headline-lg":["IBM Plex Sans"],"body-sm":["IBM Plex Sans"],"headline-sm":["IBM Plex Sans"]},
+    fontSize:{"headline-md":["24px",{"lineHeight":"32px","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"mono-data":["14px",{"lineHeight":"20px","fontWeight":"450"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.05em","fontWeight":"600"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"500"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}]}
+  }}
+}
+</script>
+<style>
+  .gei-icon { display:inline-flex; align-items:center; vertical-align:middle; }
+  .custom-scrollbar::-webkit-scrollbar { width:4px; height:4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background:#0b141c; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background:#414752; border-radius:2px; }
+  .map-container { background: radial-gradient(circle at center, #182028 0%, #0b141c 100%); }
+  .scanline { width:100%; height:2px; background:linear-gradient(to right,transparent,rgba(162,201,255,0.2),transparent); position:absolute; animation:scan 4s linear infinite; }
+  @keyframes scan { from{top:0%} to{top:100%} }
+  @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  .ticker-scroll-inner { display:inline-flex; animation:ticker-scroll 60s linear infinite; white-space:nowrap; }
+  .ticker-scroll-inner:hover { animation-play-state:paused; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .feed-new { animation:slideIn .4s ease-out; }
+  @keyframes breakingFlash { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .animate-spin-slow { animation:spin 1.2s linear infinite; }
+  .breaking-badge { animation:breakingFlash 1.5s ease-in-out infinite; }
+  .live-dot { animation:livePulse 1.5s ease-in-out infinite; }
+  @keyframes livePulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:0.7} }
+  .sector-card:hover { box-shadow:0 0 12px rgba(162,201,255,0.08); transition:box-shadow .3s ease; }
+  .density-compact [data-page="dashboard"] main { gap:12px; padding:12px; }
+  .density-compact [data-page="dashboard"] section { border-radius:6px; }
+  .density-compact .sector-card { padding:12px; }
+  .density-compact .sector-card .h-12 { height:38px; }
+  .density-compact .intel-card { min-height:150px; }
+  .density-compact .map-container { min-height:330px !important; }
+  .density-compact [data-georisk-panel] { gap:10px; }
+  .density-compact [data-georisk-panel] > div { padding-bottom:2px; }
+
+  /* ── DRAWER ── */
+  #gei-drawer {
+    position:fixed; top:0; right:0; height:100vh; width:420px; max-width:92vw;
+    background:#182028; border-left:1px solid #414752; z-index:60;
+    transform:translateX(100%); transition:transform .3s ease;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  #gei-drawer.drawer-open { transform:translateX(0); }
+  #gei-drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:55; }
+
+  /* ── SIDE PANELS (alerts, settings) ── */
+  #gei-alerts-panel, #gei-settings-panel {
+    position:fixed; top:0; right:0; height:100vh; width:380px; max-width:92vw;
+    background:#182028; border-left:1px solid #414752; z-index:60;
+    transform:translateX(100%); transition:transform .3s ease;
+    overflow:hidden;
+  }
+  #gei-alerts-panel.panel-open, #gei-settings-panel.panel-open { transform:translateX(0); }
+
+  /* ── MODAL ── */
+  #gei-modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:70;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  #gei-modal {
+    background:#182028; border:1px solid #414752; border-radius:8px;
+    width:100%; max-width:780px; max-height:90vh;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  #gei-modal-overlay.account-popover {
+    background:transparent; display:block; padding:0;
+  }
+  #gei-modal-overlay.account-popover #gei-modal {
+    position:absolute; width:360px; max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 80px); pointer-events:auto;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);
+  }
+  #gei-modal-overlay.anchor-popover {
+    background:transparent; display:block; padding:0;
+  }
+  #gei-modal-overlay.anchor-popover #gei-modal {
+    position:absolute; width:780px; max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 80px); pointer-events:auto;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);
+  }
+
+  /* ── FILTER PANEL ── */
+  #gei-filter-panel {
+    position:absolute; top:68px; right:100px; z-index:65;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+  }
+
+  /* ── PAGE TRANSITIONS ── */
+  [data-page] { animation:slideIn .25s ease-out; }
+  #gei-modal-overlay.hidden,
+  #gei-drawer-overlay.hidden,
+  #gei-filter-panel.hidden {
+    display:none !important;
+  }
+</style>
+</head>
+<body class="density-compact bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- ══════════════════════════════════════════
+     HEADER NAV
+═══════════════════════════════════════════ -->
+<header class="flex justify-between items-center w-full px-lg py-sm h-16 border-b border-outline-variant bg-background sticky top-0 z-50">
+  <div class="flex items-center gap-xl">
+    <h1 class="text-headline-sm font-bold text-on-background tracking-tight cursor-pointer" onclick="window.location.hash='dashboard'">GeoEnergy Intelligence AI</h1>
+    <nav class="hidden md:flex gap-lg">
+      <a href="#dashboard"   data-nav="dashboard"   class="text-label-md text-primary border-b-2 border-primary pb-1 cursor-pointer transition-colors duration-200">Dashboard</a>
+      <a href="#commodities" data-nav="commodities"  class="text-label-md text-on-surface-variant hover:text-primary cursor-pointer transition-colors duration-200">Commodities</a>
+      <a href="#georisk"     data-nav="georisk"      class="text-label-md text-on-surface-variant hover:text-primary cursor-pointer transition-colors duration-200">Geo Risk</a>
+      <a href="#headlines"   data-nav="headlines"    class="text-label-md text-on-surface-variant hover:text-primary cursor-pointer transition-colors duration-200">Headlines</a>
+      <a href="#statistics"  data-nav="statistics"   class="text-label-md text-on-surface-variant hover:text-primary cursor-pointer transition-colors duration-200">Statistics</a>
+    </nav>
+  </div>
+  <div class="flex items-center gap-md">
+    <div class="flex items-center gap-xs px-sm py-xs bg-surface-container rounded-full border border-outline-variant">
+      <span class="w-2 h-2 rounded-full bg-tertiary live-dot"></span>
+      <span class="text-label-md font-mono-data text-on-surface-variant" data-system-status>System: Nominal | 14:02 UTC</span>
+    </div>
+    <div class="flex gap-sm">
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-all" title="Refresh data" data-action="refresh">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></span>
+      </button>
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-all" title="Filters" data-action="filter">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="8" x2="16" y1="12" y2="12"/><line x1="11" x2="13" y1="18" y2="18"/></svg></span>
+      </button>
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-all relative" title="Alerts" data-action="alerts">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+        <span class="w-2 h-2 bg-error rounded-full absolute top-1 right-1" data-notif-badge></span>
+      </button>
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-all" title="Settings" data-action="settings">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      </button>
+    </div>
+    <button class="w-8 h-8 rounded-full border border-outline-variant bg-primary-container flex items-center justify-center hover:brightness-110 transition-all" data-action="profile" title="Account">
+      <span class="gei-icon text-on-primary-container"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+    </button>
+  </div>
+</header>
+
+<!-- Filter panel anchor -->
+<div id="gei-filter-panel" class="hidden"></div>
+
+<!-- ══════════════════════════════════════════
+     DASHBOARD PAGE
+═══════════════════════════════════════════ -->
+<div data-page="dashboard">
+<main class="max-w-[1920px] mx-auto p-md space-y-md">
+
+  <!-- How to Read This Dashboard -->
+  <div class="bg-surface-container-low border border-outline-variant/70 rounded-lg px-md py-sm flex items-center gap-lg flex-wrap" id="how-to-read-panel">
+    <div class="flex items-center gap-xs shrink-0">
+      <span class="gei-icon text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+      <p class="text-label-md font-bold text-on-surface-variant tracking-widest whitespace-nowrap">HOW TO READ</p>
+    </div>
+    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-sm min-w-0">
+      <div class="flex items-start gap-xs"><span class="text-primary font-mono-data text-xs font-bold shrink-0 mt-0.5">01</span><p class="text-body-sm text-on-surface-variant leading-snug">Track live energy prices, geopolitical risk, and breaking market events in one place.</p></div>
+      <div class="flex items-start gap-xs"><span class="text-primary font-mono-data text-xs font-bold shrink-0 mt-0.5">02</span><p class="text-body-sm text-on-surface-variant leading-snug">AI converts headlines, price movement, and risk signals into sector sentiment scores.</p></div>
+      <div class="flex items-start gap-xs"><span class="text-primary font-mono-data text-xs font-bold shrink-0 mt-0.5">03</span><p class="text-body-sm text-on-surface-variant leading-snug">Use Market Direction, Global Risk Level, and Most Affected Sector to read today's pressure points.</p></div>
+      <div class="flex items-start gap-xs"><span class="text-primary font-mono-data text-xs font-bold shrink-0 mt-0.5">04</span><p class="text-body-sm text-on-surface-variant leading-snug">Click any card, risk region, or report to see why it matters and what to watch next.</p></div>
+    </div>
+  </div>
+
+  <!-- Market Pulse Strip -->
+  <section class="grid grid-cols-2 md:grid-cols-5 gap-md">
+    <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors">
+      <p class="text-label-md text-on-surface-variant mb-1">MARKET DIRECTION</p>
+      <p class="text-headline-sm text-primary font-bold" data-pulse-direction>Stable-Bullish</p>
+    </div>
+    <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors">
+      <p class="text-label-md text-on-surface-variant mb-1">GLOBAL RISK LEVEL</p>
+      <p class="text-headline-sm text-tertiary font-bold" data-pulse-risk>Elevated</p>
+    </div>
+    <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors">
+      <p class="text-label-md text-on-surface-variant mb-1">MOST AFFECTED SECTOR</p>
+      <p class="text-headline-sm text-on-surface font-bold" data-pulse-sector>Refined Products</p>
+    </div>
+    <div class="p-md bg-surface-container border border-outline-variant rounded-lg border-l-4 border-l-tertiary cursor-pointer hover:border-primary transition-colors">
+      <p class="text-label-md text-on-surface-variant mb-1">KEY REGION</p>
+      <p class="text-headline-sm text-on-surface font-bold" data-pulse-region>Strait of Hormuz</p>
+    </div>
+    <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors">
+      <p class="text-label-md text-on-surface-variant mb-1">BIGGEST EVENT</p>
+      <p class="text-headline-sm text-on-surface font-bold" data-pulse-event>OPEC+ Meeting</p>
+    </div>
+  </section>
+
+  <!-- Live Feed Scrolling Bar -->
+  <div class="bg-surface-container-low border-y border-outline-variant py-xs overflow-hidden whitespace-nowrap relative cursor-pointer" title="Click any item for details">
+    <div class="ticker-scroll-inner" data-live-bar>
+      <div class="flex items-center gap-xl px-md">
+        <span class="px-1.5 py-0.5 bg-error text-[10px] font-bold rounded-sm breaking-badge">LIVE FEED</span>
+        <span class="text-body-sm text-on-surface">WTI Crude jumps +1.2% on supply concerns</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">OPEC+ meeting confirmed for July</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">New sanctions on Russian energy exports proposed</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">Natural Gas storage levels hit record high in EU</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">Gulf Coast refinery maintenance reduces diesel output</span>
+        <!-- duplicate for seamless loop -->
+        <span class="ml-xl px-1.5 py-0.5 bg-error text-[10px] font-bold rounded-sm breaking-badge">LIVE FEED</span>
+        <span class="text-body-sm text-on-surface">WTI Crude jumps +1.2% on supply concerns</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">OPEC+ meeting confirmed for July</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">New sanctions on Russian energy exports proposed</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">Natural Gas storage levels hit record high in EU</span>
+        <span class="text-outline-variant text-xs">•</span>
+        <span class="text-body-sm text-on-surface">Gulf Coast refinery maintenance reduces diesel output</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Market Ticker -->
+  <div class="flex flex-wrap items-center justify-between gap-md px-md py-sm border border-outline-variant bg-surface-container-lowest rounded-lg"
+       data-ticker-container>
+    <!-- Rendered by app.js → renderTickerBar() — fallback shown on load -->
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="WTI">
+      <span class="text-label-md text-on-surface-variant">WTI CRUDE</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="WTI">$78.42</span>
+      <span class="font-mono-data text-body-sm text-primary" data-ticker-change="WTI">+1.2%</span>
+    </div>
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="BRENT">
+      <span class="text-label-md text-on-surface-variant">BRENT CRUDE</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="BRENT">$82.15</span>
+      <span class="font-mono-data text-body-sm text-primary" data-ticker-change="BRENT">+0.8%</span>
+    </div>
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="NATGAS">
+      <span class="text-label-md text-on-surface-variant">NATURAL GAS</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="NATGAS">$2.34</span>
+      <span class="font-mono-data text-body-sm text-error" data-ticker-change="NATGAS">-2.4%</span>
+    </div>
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="DIESEL">
+      <span class="text-label-md text-on-surface-variant">DIESEL</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="DIESEL">$124.50</span>
+      <span class="font-mono-data text-body-sm text-outline" data-ticker-change="DIESEL">0.0%</span>
+    </div>
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="GASOLINE">
+      <span class="text-label-md text-on-surface-variant">GASOLINE</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="GASOLINE">$2.58</span>
+      <span class="font-mono-data text-body-sm text-primary" data-ticker-change="GASOLINE">+0.5%</span>
+    </div>
+    <div class="flex items-center gap-sm cursor-pointer" data-ticker-id="EU_POWER">
+      <span class="text-label-md text-on-surface-variant">POWER INDEX (EU)</span>
+      <span class="font-mono-data text-body-md text-on-surface" data-ticker-price="EU_POWER">€94.20</span>
+      <span class="font-mono-data text-body-sm text-primary" data-ticker-change="EU_POWER">+3.1%</span>
+    </div>
+  </div>
+
+  <!-- Sector Cards -->
+  <section class="grid grid-cols-1 md:grid-cols-5 gap-sm" data-sector-cards>
+    <!-- Rendered by app.js → renderSectorCardsSection() -->
+    <div class="p-md bg-surface-container border-t-2 border-t-primary border-x border-b border-outline-variant rounded-b-lg sector-card cursor-pointer" data-sector-id="crude-oil">
+      <div class="flex justify-between items-start mb-md"><div><h3 class="text-label-md text-on-surface-variant">CRUDE OIL</h3><p class="text-headline-sm font-bold">84%</p></div><span class="text-[10px] px-2 py-0.5 border border-primary text-primary rounded-sm tracking-wider">BULLISH</span></div>
+      <p class="text-body-sm text-on-surface-variant h-12 line-clamp-3 mb-md">Supply constraints in Libya offsetting weaker Asian demand data.</p>
+      <div class="flex items-end gap-1 h-12 mb-xs"><div class="w-full bg-outline-variant h-2"></div><div class="w-full bg-outline-variant h-4"></div><div class="w-full bg-primary-container h-8"></div><div class="w-full bg-primary h-12"></div></div>
+      <p class="text-[10px] font-mono-data text-tertiary">WATCH: North Sea Maintenance</p>
+    </div>
+    <div class="p-md bg-surface-container border-t-2 border-t-error border-x border-b border-outline-variant rounded-b-lg sector-card cursor-pointer" data-sector-id="natural-gas">
+      <div class="flex justify-between items-start mb-md"><div><h3 class="text-label-md text-on-surface-variant">NATURAL GAS</h3><p class="text-headline-sm font-bold">62%</p></div><span class="text-[10px] px-2 py-0.5 border border-error text-error rounded-sm tracking-wider">BEARISH</span></div>
+      <p class="text-body-sm text-on-surface-variant h-12 line-clamp-3 mb-md">High storage levels in EU keeping immediate pressure muted.</p>
+      <div class="flex items-end gap-1 h-12 mb-xs"><div class="w-full bg-error-container h-10"></div><div class="w-full bg-error-container h-8"></div><div class="w-full bg-error-container h-6"></div><div class="w-full bg-outline-variant h-4"></div></div>
+      <p class="text-[10px] font-mono-data text-tertiary">WATCH: Freeport LNG Status</p>
+    </div>
+    <div class="p-md bg-surface-container border-t-2 border-t-tertiary border-x border-b border-outline-variant rounded-b-lg sector-card cursor-pointer" data-sector-id="refined-products">
+      <div class="flex justify-between items-start mb-md"><div><h3 class="text-label-md text-on-surface-variant">REFINED PRODUCTS</h3><p class="text-headline-sm font-bold">78%</p></div><span class="text-[10px] px-2 py-0.5 border border-tertiary text-tertiary rounded-sm tracking-wider">VOLATILE</span></div>
+      <p class="text-body-sm text-on-surface-variant h-12 line-clamp-3 mb-md">Diesel/Gasoline/Jet Fuel margins tightening as maintenance cycles begin.</p>
+      <div class="flex items-end gap-1 h-12 mb-xs"><div class="w-full bg-outline-variant h-2"></div><div class="w-full bg-outline-variant h-2"></div><div class="w-full bg-tertiary-container h-6"></div><div class="w-full bg-tertiary h-10"></div></div>
+      <p class="text-[10px] font-mono-data text-tertiary">WATCH: Gulf Coast Yields</p>
+    </div>
+    <div class="p-md bg-surface-container border-t-2 border-t-on-surface-variant border-x border-b border-outline-variant rounded-b-lg sector-card cursor-pointer" data-sector-id="power">
+      <div class="flex justify-between items-start mb-md"><div><h3 class="text-label-md text-on-surface-variant">POWER</h3><p class="text-headline-sm font-bold">91%</p></div><span class="text-[10px] px-2 py-0.5 border border-on-surface-variant text-on-surface-variant rounded-sm tracking-wider">STEADY</span></div>
+      <p class="text-body-sm text-on-surface-variant h-12 line-clamp-3 mb-md">Interconnector capacity between France and UK near nominal limits.</p>
+      <div class="flex items-end gap-1 h-12 mb-xs"><div class="w-full bg-outline-variant h-4"></div><div class="w-full bg-on-surface-variant h-4"></div><div class="w-full bg-on-surface-variant h-5"></div><div class="w-full bg-on-surface-variant h-6"></div></div>
+      <p class="text-[10px] font-mono-data text-tertiary">WATCH: French Nuclear Outage</p>
+    </div>
+    <div class="p-md bg-surface-container border-t-2 border-t-primary-container border-x border-b border-outline-variant rounded-b-lg sector-card cursor-pointer" data-sector-id="renewables">
+      <div class="flex justify-between items-start mb-md"><div><h3 class="text-label-md text-on-surface-variant">RENEWABLES</h3><p class="text-headline-sm font-bold">95%</p></div><span class="text-[10px] px-2 py-0.5 border border-primary-container text-primary-container rounded-sm tracking-wider">EXPANDING</span></div>
+      <p class="text-body-sm text-on-surface-variant h-12 line-clamp-3 mb-md">Record solar output in Southern Europe reducing coal dependence.</p>
+      <div class="flex items-end gap-1 h-12 mb-xs"><div class="w-full bg-primary-fixed-dim/20 h-2"></div><div class="w-full bg-primary-fixed-dim h-4"></div><div class="w-full bg-primary-container h-8"></div><div class="w-full bg-primary-container h-10"></div></div>
+      <p class="text-[10px] font-mono-data text-tertiary">WATCH: Grid Congestion Nodes</p>
+    </div>
+  </section>
+
+  <!-- Cross-Market Signals -->
+  <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+    <div class="flex items-center justify-between p-md border-b border-outline-variant">
+      <div class="flex items-center gap-sm">
+        <h2 class="text-label-md font-bold tracking-widest text-on-surface-variant">CROSS-MARKET SIGNALS</h2>
+        <span class="text-[10px] px-1.5 py-0.5 border border-outline-variant text-outline rounded-full font-mono-data">AI Context</span>
+      </div>
+      <span class="text-[10px] text-outline">Supporting signals for AI analysis · Gold · Copper · Wheat · Uranium · Lithium</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-5" data-cross-market-signals>
+      <!-- Rendered by app.js → renderCrossMarketSignals() -->
+    </div>
+  </section>
+
+  <!-- Risk Map + Executive Briefing -->
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-md" style="min-height:520px">
+
+    <!-- Strategic Risk Visualization -->
+    <div class="lg:col-span-8 flex flex-col bg-surface-container border border-outline-variant rounded-lg overflow-hidden relative">
+      <div class="flex items-center justify-between p-md border-b border-outline-variant">
+        <h2 class="text-label-md font-bold tracking-widest text-on-surface-variant">STRATEGIC RISK VISUALIZATION</h2>
+        <div class="flex gap-md">
+          <div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-error"></span><span class="text-[10px]">High Conflict</span></div>
+          <div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="text-[10px]">Supply Chokepoint</span></div>
+        </div>
+      </div>
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-3">
+        <!-- Map -->
+        <div class="md:col-span-2 relative map-container overflow-hidden group" style="min-height:380px">
+          <div class="scanline"></div>
+          <div class="absolute inset-0 flex items-center justify-center p-md">
+            <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" class="w-full h-full opacity-70">
+              <defs>
+                <pattern id="grid" width="80" height="45" patternUnits="userSpaceOnUse"><path d="M 80 0 L 0 0 0 45" fill="none" stroke="#414752" stroke-width="0.5"/></pattern>
+                <linearGradient id="land" x1="0" x2="1"><stop offset="0" stop-color="#1b2a35"/><stop offset="1" stop-color="#253441"/></linearGradient>
+              </defs>
+              <rect width="800" height="450" fill="url(#grid)" opacity="0.55"/>
+              <path d="M98 105 L138 82 L194 88 L226 118 L218 154 L244 178 L218 208 L188 210 L166 246 L134 238 L122 198 L96 176 L72 140 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M218 230 L246 250 L258 298 L242 358 L212 390 L182 360 L174 314 L190 276 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M342 82 L434 62 L514 80 L548 112 L520 144 L452 140 L418 116 L362 124 L326 110 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M402 148 L462 150 L498 188 L486 250 L464 330 L426 368 L390 322 L374 254 L382 194 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M504 156 L558 154 L590 184 L574 218 L524 212 L496 184 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M548 86 L646 82 L710 118 L742 170 L716 222 L650 218 L608 184 L584 132 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M640 282 L714 278 L746 326 L728 372 L670 362 L628 326 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+              <path d="M318 70 L352 54 L390 58 L366 76 Z" fill="url(#land)" stroke="#5d6774" stroke-width="1.2"/>
+
+              <!-- Hotspot: Strait of Hormuz (Critical) -->
+              <g data-hotspot-id="geo-001" style="cursor:pointer">
+                <circle cx="505" cy="148" r="14" fill="rgba(255,180,171,0.15)" stroke="#ffb4ab" stroke-width="1">
+                  <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="505" cy="148" r="5" fill="#ffb4ab"/>
+                <text x="516" y="143" fill="#ffb4ab" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">HORMUZ 10</text>
+              </g>
+
+              <!-- Hotspot: Eastern Europe (High) -->
+              <g data-hotspot-id="geo-002" style="cursor:pointer">
+                <circle cx="430" cy="88" r="10" fill="rgba(250,188,69,0.15)" stroke="#fabc45" stroke-width="1">
+                  <animate attributeName="r" values="7;13;7" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="430" cy="88" r="4" fill="#fabc45"/>
+                <text x="442" y="83" fill="#fabc45" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">RUSSIA TRANSIT 8.4</text>
+              </g>
+
+              <!-- Hotspot: Red Sea (Moderate) -->
+              <g data-hotspot-id="geo-003" style="cursor:pointer">
+                <circle cx="455" cy="195" r="9" fill="rgba(162,201,255,0.15)" stroke="#a2c9ff" stroke-width="1">
+                  <animate attributeName="r" values="6;12;6" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="455" cy="195" r="4" fill="#a2c9ff"/>
+                <text x="467" y="190" fill="#fabc45" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">RED SEA 8</text>
+              </g>
+
+              <!-- Hotspot: Libya (High) -->
+              <g data-hotspot-id="geo-004" style="cursor:pointer">
+                <circle cx="398" cy="158" r="8" fill="rgba(250,188,69,0.12)" stroke="#fabc45" stroke-width="1">
+                  <animate attributeName="r" values="5;10;5" dur="3.2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="398" cy="158" r="3" fill="#fabc45"/>
+                <text x="408" y="153" fill="#fabc45" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">LIBYA 7.4</text>
+              </g>
+
+              <!-- Hotspot: Gulf Coast (Moderate) -->
+              <g data-hotspot-id="geo-005" style="cursor:pointer">
+                <circle cx="155" cy="155" r="7" fill="rgba(162,201,255,0.12)" stroke="#a2c9ff" stroke-width="1">
+                  <animate attributeName="r" values="5;10;5" dur="3.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="155" cy="155" r="3" fill="#a2c9ff"/>
+                <text x="165" y="150" fill="#a2c9ff" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">GULF 6.6</text>
+              </g>
+
+              <!-- Hotspot: West Africa (Moderate) -->
+              <g data-hotspot-id="geo-006" style="cursor:pointer">
+                <circle cx="384" cy="216" r="7" fill="rgba(162,201,255,0.12)" stroke="#a2c9ff" stroke-width="1">
+                  <animate attributeName="r" values="5;10;5" dur="3.1s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="384" cy="216" r="3" fill="#a2c9ff"/>
+                <text x="394" y="211" fill="#a2c9ff" font-size="10" font-family="IBM Plex Mono" style="pointer-events:none">W.AFRICA 6.9</text>
+              </g>
+
+              <line x1="505" y1="148" x2="455" y2="195" stroke="#ffb4ab" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.5"/>
+              <line x1="455" y1="195" x2="398" y2="158" stroke="#a2c9ff" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4"/>
+            </svg>
+          </div>
+          <button data-hotspot-button-id="geo-001" title="Strait of Hormuz risk detail" class="absolute rounded-full border border-error/50 bg-error/10 hover:bg-error/20 transition-colors" style="left:62%;top:32%;width:34px;height:34px"></button>
+          <button data-hotspot-button-id="geo-002" title="Eastern Europe risk detail" class="absolute rounded-full border border-tertiary/50 bg-tertiary/10 hover:bg-tertiary/20 transition-colors" style="left:53%;top:18%;width:28px;height:28px"></button>
+          <button data-hotspot-button-id="geo-003" title="Red Sea Transit risk detail" class="absolute rounded-full border border-primary/50 bg-primary/10 hover:bg-primary/20 transition-colors" style="left:56%;top:43%;width:28px;height:28px"></button>
+          <button data-hotspot-button-id="geo-004" title="Libya risk detail" class="absolute rounded-full border border-tertiary/50 bg-tertiary/10 hover:bg-tertiary/20 transition-colors" style="left:49%;top:35%;width:24px;height:24px"></button>
+          <button data-hotspot-button-id="geo-005" title="Gulf Coast risk detail" class="absolute rounded-full border border-primary/50 bg-primary/10 hover:bg-primary/20 transition-colors" style="left:19%;top:34%;width:24px;height:24px"></button>
+          <button data-hotspot-button-id="geo-006" title="West Africa risk detail" class="absolute rounded-full border border-primary/50 bg-primary/10 hover:bg-primary/20 transition-colors" style="left:47%;top:48%;width:24px;height:24px"></button>
+          <div class="absolute bottom-md left-md p-xs bg-surface-container/80 backdrop-blur-md rounded border border-outline-variant">
+            <span class="gei-icon text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4 6-6-4-4Z"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/></svg></span>
+            <span class="text-[10px] font-mono-data text-on-surface-variant ml-1">FEED: SAT_ALPHA_47_LIVE</span>
+          </div>
+          <div class="absolute top-sm right-sm text-[10px] text-outline bg-surface-container/60 px-sm py-xs rounded">Click hotspots for detail</div>
+        </div>
+
+        <!-- Risk → Market Impact Panel -->
+        <div class="p-md bg-surface-container-high space-y-md border-l border-outline-variant overflow-y-auto custom-scrollbar">
+          <h3 class="text-label-md text-on-surface-variant uppercase tracking-tighter">RISK → MARKET IMPACT</h3>
+          <p class="text-[10px] text-outline italic">Click any row to highlight sectors</p>
+          <div data-georisk-panel class="space-y-md">
+            <!-- Strait of Hormuz -->
+            <div class="space-y-sm cursor-pointer group" data-risk-id="geo-001">
+              <div class="flex justify-between items-end"><span class="text-body-md font-bold group-hover:text-primary transition-colors">Strait of Hormuz</span><span class="text-error font-mono-data text-label-md">9.2 CRITICAL</span></div>
+              <p class="text-[10px] text-on-surface-variant leading-tight">Primary impact on Crude & LNG spot signals. +$5-8 volatility projected.</p>
+              <div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden"><div class="bg-error h-full" style="width:92%"></div></div>
+            </div>
+            <!-- Eastern Europe -->
+            <div class="space-y-sm cursor-pointer group" data-risk-id="geo-002">
+              <div class="flex justify-between items-end"><span class="text-body-md font-bold group-hover:text-primary transition-colors">Eastern Europe</span><span class="text-tertiary font-mono-data text-label-md">8.5 HIGH</span></div>
+              <p class="text-[10px] text-on-surface-variant leading-tight">Natural Gas transit stability. EU storage withdrawals accelerating.</p>
+              <div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden"><div class="bg-tertiary h-full" style="width:85%"></div></div>
+            </div>
+            <!-- Red Sea Transit -->
+            <div class="space-y-sm cursor-pointer group" data-risk-id="geo-003">
+              <div class="flex justify-between items-end"><span class="text-body-md font-bold group-hover:text-primary transition-colors">Red Sea Transit</span><span class="text-primary font-mono-data text-label-md">7.9 MODERATE</span></div>
+              <p class="text-[10px] text-on-surface-variant leading-tight">Insurance premiums rising for refined product carriers.</p>
+              <div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden"><div class="bg-primary h-full" style="width:79%"></div></div>
+            </div>
+          </div>
+          <div class="pt-md border-t border-outline-variant">
+            <p class="text-[10px] text-outline flex items-center gap-xs" data-georisk-footer>
+              <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+              Updated real-time via satellite telemetry
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Executive Intelligence Briefing -->
+    <div class="lg:col-span-4 bg-surface-container border border-outline-variant rounded-lg p-md flex flex-col">
+      <div class="flex items-start justify-between gap-sm mb-lg">
+        <div class="flex items-center gap-sm">
+          <span class="gei-icon text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span>
+          <div>
+            <h2 class="text-headline-sm font-bold">Executive Intelligence Briefing</h2>
+            <p class="text-[10px] text-outline mt-0.5">Generated from live signals</p>
+          </div>
+        </div>
+        <span class="text-[9px] px-1.5 py-0.5 border border-primary/30 text-primary rounded font-bold shrink-0">AI ANALYSIS</span>
+      </div>
+      <div class="flex-1 space-y-lg custom-scrollbar overflow-y-auto pr-xs">
+        <div>
+          <h4 class="text-label-md text-primary font-bold uppercase mb-xs">• WHAT CHANGED?</h4>
+          <p class="text-body-md italic text-on-surface leading-relaxed" data-briefing-changed>"The overnight shift in OPEC+ production rhetoric signals a pivot towards defending market share over price floors."</p>
+        </div>
+        <div>
+          <h4 class="text-label-md text-primary font-bold uppercase mb-xs">• WHY IT MATTERS</h4>
+          <p class="text-body-sm text-on-surface-variant leading-relaxed" data-briefing-matters>Short-term liquidity in Brent futures is increasing. Downside protection is now more expensive as hedging activity spikes.</p>
+        </div>
+        <div>
+          <h4 class="text-label-md text-primary font-bold uppercase mb-xs">• WHAT TO WATCH NEXT</h4>
+          <ul class="space-y-xs" data-briefing-watch>
+            <li class="flex gap-sm items-start"><span class="text-tertiary font-mono-data text-xs">→</span><span class="text-body-sm text-on-surface-variant">Strait of Hormuz tanker activity</span></li>
+            <li class="flex gap-sm items-start"><span class="text-tertiary font-mono-data text-xs">→</span><span class="text-body-sm text-on-surface-variant">European gas storage levels</span></li>
+            <li class="flex gap-sm items-start"><span class="text-tertiary font-mono-data text-xs">→</span><span class="text-body-sm text-on-surface-variant">Gulf Coast refinery yields</span></li>
+          </ul>
+        </div>
+        <div class="bg-surface-container-high p-md rounded border border-outline-variant">
+          <div class="flex items-center gap-xs mb-sm"><span class="gei-icon text-tertiary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span><h4 class="text-label-md text-tertiary font-bold uppercase">STRATEGY BRIEF</h4></div>
+          <ul class="space-y-sm" data-briefing-strategy>
+            <li class="flex gap-sm"><span class="text-tertiary font-mono-data text-xs">01</span><span class="text-body-sm">Increase exposure to North American pipeline operators.</span></li>
+            <li class="flex gap-sm"><span class="text-tertiary font-mono-data text-xs">02</span><span class="text-body-sm">Maintain neutral stance on EU Power spot markets.</span></li>
+            <li class="flex gap-sm"><span class="text-tertiary font-mono-data text-xs">03</span><span class="text-body-sm">Execute long-dated calls on Uranium miners.</span></li>
+          </ul>
+        </div>
+      </div>
+      <button data-action="view-analysis"
+              class="w-full mt-lg py-md bg-primary-container text-on-primary-container font-bold rounded flex items-center justify-center gap-sm hover:brightness-110 transition-all cursor-pointer">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg></span>
+        VIEW FULL ANALYSIS
+      </button>
+    </div>
+  </section>
+
+  <!-- Live Event Stream + AI Intelligence Reports — side by side -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-md">
+
+    <!-- LEFT: Live Event Stream -->
+    <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex flex-col" data-live-stream-section>
+      <div class="flex items-center justify-between px-md py-sm border-b border-outline-variant flex-wrap gap-xs">
+        <div class="flex items-center gap-xs flex-wrap">
+          <span class="w-1.5 h-1.5 rounded-full bg-error live-dot shrink-0"></span>
+          <h2 class="text-label-md font-bold tracking-widest text-on-surface-variant">LIVE EVENT STREAM</h2>
+          <span class="text-[10px] font-mono-data text-outline px-1.5 py-0.5 border border-outline-variant rounded-full" id="live-feed-count">15</span>
+          <span class="text-[9px] px-1.5 py-0.5 bg-error-container/20 text-error border border-error/30 rounded font-bold">REAL-TIME</span>
+        </div>
+        <div class="flex gap-xs flex-wrap">
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-primary text-primary font-bold" data-feed-filter="All">All</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-feed-filter="High Impact">High</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-feed-filter="Geo Risk">Geo Risk</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-feed-filter="Market Move">Markets</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-feed-filter="Policy">Policy</button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-xs space-y-xs" id="live-feed-panel" style="max-height:560px"></div>
+    </section>
+
+    <!-- RIGHT: AI Intelligence Reports -->
+    <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex flex-col" data-intelligence-feed-section>
+      <div class="flex items-center justify-between px-md py-sm border-b border-outline-variant flex-wrap gap-xs">
+        <div class="flex items-center gap-xs flex-wrap">
+          <h2 class="text-label-md font-bold tracking-widest text-on-surface-variant">AI INTELLIGENCE REPORTS</h2>
+          <span class="text-[10px] font-mono-data text-outline px-1.5 py-0.5 border border-outline-variant rounded-full" id="intel-feed-count">15</span>
+          <span class="text-[9px] px-1.5 py-0.5 bg-primary-container/20 text-primary border border-primary/30 rounded font-bold">AI-CLASSIFIED</span>
+        </div>
+        <div class="flex gap-xs flex-wrap">
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-primary text-primary font-bold" data-intel-filter="all">All</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-intel-filter="high-impact">High</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-intel-filter="geo-risk">Geo Risk</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-intel-filter="supply-chain">Supply</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-intel-filter="market-move">Markets</button>
+          <button class="text-[9px] px-1.5 py-0.5 rounded-sm border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" data-intel-filter="policy">Policy</button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-xs space-y-xs" data-intelligence-feed style="max-height:520px">
+        <!-- Rendered by app.js → renderIntelligenceFeedSection() -->
+      </div>
+      <button class="w-full py-sm text-[10px] text-on-surface-variant hover:text-primary transition-colors border-t border-outline-variant uppercase font-bold tracking-widest cursor-pointer"
+              data-action="view-all-reports">
+        VIEW ALL INTELLIGENCE REPORTS
+      </button>
+    </section>
+
+  </div>
+
+</main>
+</div><!-- end #page-dashboard -->
+
+<!-- ══════════════════════════════════════════
+     COMMODITIES PAGE
+═══════════════════════════════════════════ -->
+<div data-page="commodities" class="hidden">
+<main class="max-w-[1920px] mx-auto p-md space-y-md"></main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     GEO RISK PAGE
+═══════════════════════════════════════════ -->
+<div data-page="georisk" class="hidden">
+<main class="max-w-[1920px] mx-auto p-md space-y-md"></main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HEADLINES PAGE
+═══════════════════════════════════════════ -->
+<div data-page="headlines" class="hidden">
+<main class="max-w-[1920px] mx-auto p-md space-y-md"></main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STATISTICS PAGE
+═══════════════════════════════════════════ -->
+<div data-page="statistics" class="hidden">
+<main class="max-w-[1920px] mx-auto p-md space-y-md">
+  <div id="statistics-content"></div>
+</main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-md mt-xl border-t border-outline-variant bg-background gap-md">
+  <div>
+    <p class="text-body-sm font-bold text-on-surface">GeoEnergy Intelligence</p>
+    <p class="text-body-sm text-on-surface-variant">© 2024 GeoEnergy Intelligence. All rights reserved. Data latency &lt; 200ms.</p>
+  </div>
+  <div class="flex gap-lg">
+    <a class="text-body-sm text-on-surface-variant hover:text-primary underline cursor-pointer" data-footer="methodology">Methodology</a>
+    <a class="text-body-sm text-on-surface-variant hover:text-primary underline cursor-pointer" data-footer="compliance">Compliance</a>
+    <a class="text-body-sm text-on-surface-variant hover:text-primary underline cursor-pointer" data-footer="support">Support</a>
+    <a class="text-body-sm text-on-surface-variant hover:text-primary underline cursor-pointer" data-footer="privacy">Privacy Policy</a>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     DRAWER (right panel)
+═══════════════════════════════════════════ -->
+<div id="gei-drawer-overlay" class="hidden"></div>
+<div id="gei-drawer">
+  <div class="flex items-center justify-between p-md border-b border-outline-variant shrink-0">
+    <div class="flex items-center gap-sm">
+      <span class="gei-icon text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+      <h3 class="text-headline-sm font-bold" id="gei-drawer-title">Detail</h3>
+    </div>
+    <button id="gei-drawer-close" class="text-on-surface-variant hover:text-primary transition-colors p-xs">
+      <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+    </button>
+  </div>
+  <div id="gei-drawer-body" class="flex-1 overflow-y-auto custom-scrollbar p-md"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL (center overlay)
+═══════════════════════════════════════════ -->
+<div id="gei-modal-overlay" class="hidden">
+  <div id="gei-modal">
+    <div class="flex items-center justify-between p-md border-b border-outline-variant shrink-0">
+      <h3 class="text-headline-sm font-bold" id="gei-modal-title">Detail</h3>
+      <button id="gei-modal-close" class="text-on-surface-variant hover:text-primary transition-colors p-xs">
+        <span class="gei-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+      </button>
+    </div>
+    <div id="gei-modal-body" class="flex-1 overflow-y-auto custom-scrollbar" style="min-height:80px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ALERTS PANEL (right slide-in)
+═══════════════════════════════════════════ -->
+<div id="gei-alerts-panel"></div>
+
+<!-- ══════════════════════════════════════════
+     SETTINGS PANEL (right slide-in)
+═══════════════════════════════════════════ -->
+<div id="gei-settings-panel"></div>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS — load order critical
+═══════════════════════════════════════════ -->
+<script src="js/data.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/state.js"></script>
+<script src="js/services.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Secondary page renderers -->
+<script>
+'use strict';
+
+// ─── HEADLINES STATE ──────────────────────────────────────────────────────────
+let _hlState = { category: 'All', sector: 'All', sort: 'Newest', search: '' };
+
+// ─── COMMODITIES PAGE ─────────────────────────────────────────────────────────
+function renderCommoditiesPage() {
+  const activeSector = GEIState.get('activeFilters').sector || 'All';
+  const sectorTabs   = ['All','Crude Oil','Natural Gas','Refined Products','Power','Renewables'].map(s =>
+    `<button class="text-[11px] px-sm py-xs font-bold rounded-sm border transition-colors ${activeSector===s?'border-primary bg-primary-container/30 text-primary':'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}"
+             onclick="GEIState.setNested('activeFilters.sector','${s}');renderCommoditiesPage()">${s}</button>`
+  ).join('');
+
+  const sectors = sectorScores.filter(s => activeSector==='All' || s.sector===activeSector);
+  const sectorCards = sectors.map(s => {
+    const si   = getSentimentLabel(s.sentiment);
+    const btop = getSentimentBorderTop(s.sentiment);
+    const bars = (s.sparklineData||[]).slice(-7).map((v,i,arr) => {
+      const max = Math.max(...arr);
+      const h   = Math.max(4, Math.round((v/max)*40));
+      const col = s.sentiment==='Bearish'?'#93000a':s.sentiment==='Volatile'?'#d29922':'#58a6ff';
+      return `<div style="flex:1;height:${h}px;background:${col};border-radius:1px;opacity:${(0.3+0.7*(i/arr.length)).toFixed(2)}"></div>`;
+    }).join('');
+    const relH = intelligenceFeed.filter(h => h.sector===s.sector||(h.relatedSectors||[]).includes(s.sector));
+    return `
+      <div class="bg-surface-container border-t-2 ${btop} border-x border-b border-outline-variant rounded-b-lg cursor-pointer hover:shadow-lg transition-all group"
+           onclick="openDrawer('sector',sectorScores.find(x=>x.id==='${s.id}'))">
+        <div class="p-md">
+          <div class="flex justify-between items-start mb-sm">
+            <div>
+              <p class="text-label-md text-on-surface-variant group-hover:text-primary transition-colors">${s.sector.toUpperCase()}</p>
+              <p class="text-headline-sm font-bold">${s.confidence}%</p>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 border ${si.borderClass} ${si.colorClass} rounded-sm font-bold tracking-wider">${si.label}</span>
+          </div>
+          <p class="text-body-sm text-on-surface-variant leading-snug mb-sm h-10 overflow-hidden">${s.reason}</p>
+          <div class="flex items-end gap-0.5 h-10 mb-xs">${bars}</div>
+          <p class="text-[10px] font-mono-data text-tertiary">⚑ WATCH: ${s.watchItem}</p>
+          <div class="flex justify-between items-center mt-xs">
+            <span class="text-[10px] text-outline">${getConfidenceLabel(s.confidence)}</span>
+            <span class="text-[10px] font-mono-data ${(s.changeVsYesterday||'').startsWith('+')?'text-primary':'text-error'}">${s.changeVsYesterday||''}</span>
+          </div>
+        </div>
+        ${relH.length ? `<div class="border-t border-outline-variant px-md py-xs bg-surface-container-high">
+          <p class="text-[10px] text-outline">${relH.length} headline${relH.length!==1?'s':''} · ${(s.affectedRegions||[]).slice(0,2).join(', ')}</p>
+        </div>` : ''}
+      </div>`;
+  }).join('') || '<div class="col-span-full p-lg text-center bg-surface-container border border-outline-variant rounded-lg"><p class="text-body-sm text-on-surface-variant">No sectors match selected filter.</p></div>';
+
+  const tickerMap = {WTI:'Crude Oil',BRENT:'Crude Oil',NATGAS:'Natural Gas',DIESEL:'Refined Products',GASOLINE:'Refined Products',EU_POWER:'Power'};
+  const priceItems = tickerItems.filter(t => activeSector==='All' || tickerMap[t.id]===activeSector).map(item => {
+    const col    = getDirectionColorClass(item.direction);
+    const prefix = item.changePercent > 0 ? '+' : '';
+    const arrow  = item.direction==='up'?'↑':item.direction==='down'?'↓':'→';
+    return `
+      <div class="p-md bg-surface-container-high border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors group"
+           onclick="openDrawer('ticker',tickerItems.find(t=>t.id==='${item.id}'))">
+        <p class="text-label-md text-on-surface-variant group-hover:text-primary transition-colors mb-xs">${item.name.toUpperCase()}</p>
+        <p class="font-mono-data text-headline-sm font-bold text-on-surface">${item.currency}${item.price.toFixed(2)}</p>
+        <div class="flex items-center justify-between mt-xs">
+          <span class="font-mono-data text-body-sm ${col} font-bold">${arrow} ${prefix}${item.changePercent.toFixed(1)}%</span>
+          <span class="text-[10px] text-outline">${item.unit}</span>
+        </div>
+        <p class="text-[10px] text-outline mt-xs">${item.source}</p>
+      </div>`;
+  }).join('') || '<p class="text-body-sm text-on-surface-variant col-span-full">No price data for selected sector.</p>';
+
+  const pageEl = document.querySelector('[data-page="commodities"] main');
+  if (!pageEl) return;
+  pageEl.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-sm">
+      <div>
+        <h2 class="text-headline-sm font-bold">Commodity &amp; Sector Overview</h2>
+        <p class="text-body-sm text-on-surface-variant mt-xs">AI-powered sector intelligence · ${sectorScores.length} sectors tracked</p>
+      </div>
+      <span class="text-[10px] font-mono-data text-outline px-2 py-0.5 border border-outline-variant rounded">Live Data · ${getCurrentLocalTime()}</span>
+    </div>
+    <div class="flex flex-wrap gap-xs">${sectorTabs}</div>
+    <section>
+      <h3 class="text-label-md text-on-surface-variant mb-sm tracking-widest">SECTOR INTELLIGENCE</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(sectors.length||1,5)} gap-md">${sectorCards}</div>
+    </section>
+    <section class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+      <div class="flex items-center justify-between p-md border-b border-outline-variant">
+        <h3 class="text-label-md text-on-surface-variant font-bold tracking-widest">MARKET PRICES</h3>
+        <span class="text-[10px] text-outline">Click any instrument for detail</span>
+      </div>
+      <div class="p-md grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-sm">${priceItems}</div>
+    </section>`;
+}
+
+// ─── GEO RISK PAGE ────────────────────────────────────────────────────────────
+function renderGeoRiskPage() {
+  const filters      = GEIState.get('activeFilters');
+  const activeLevel  = filters.risk   || 'All';
+  const activeSector = filters.sector || 'All';
+
+  const criticalCount = geoRiskItems.filter(r=>r.riskLevel==='Critical').length;
+  const sorted        = [...geoRiskItems].sort((a,b)=>b.riskScore-a.riskScore);
+  const highest       = sorted[0];
+  const allSectors    = [...new Set(geoRiskItems.flatMap(r=>r.affectedSectors))];
+  const mostAffected  = allSectors.reduce((best,s) => {
+    const n = geoRiskItems.filter(r=>r.affectedSectors.includes(s)).length;
+    return n > (best.n||0) ? {s,n} : best;
+  }, {}).s || '—';
+
+  const riskTabs = ['All','Critical','High','Moderate'].map(lvl => {
+    const on = activeLevel===lvl;
+    const acol = lvl==='Critical'?'border-error text-error bg-error-container/20':
+                 lvl==='High'    ?'border-tertiary text-tertiary bg-tertiary-container/20':
+                 lvl==='Moderate'?'border-primary text-primary bg-primary-container/20':
+                                  'border-primary bg-primary-container/30 text-primary';
+    return `<button class="text-[11px] px-sm py-xs font-bold rounded-sm border transition-colors ${on?acol:'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}"
+                    onclick="GEIState.setNested('activeFilters.risk','${lvl}');renderGeoRiskPage()">${lvl}</button>`;
+  }).join('');
+
+  const sectorTabs = ['All','Crude Oil','Natural Gas','Refined Products','Power'].map(s => {
+    const on = activeSector===s;
+    return `<button class="text-[11px] px-sm py-xs font-bold rounded-sm border transition-colors ${on?'border-primary bg-primary-container/30 text-primary':'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}"
+                    onclick="GEIState.setNested('activeFilters.sector','${s}');renderGeoRiskPage()">${s}</button>`;
+  }).join('');
+
+  const searchQ = (document.getElementById('georisk-search')?.value || '').toLowerCase().trim();
+  const filtered = geoRiskItems.filter(r =>
+    (activeLevel==='All'  || r.riskLevel===activeLevel) &&
+    (activeSector==='All' || r.affectedSectors.includes(activeSector)) &&
+    (!searchQ || r.countryOrArea.toLowerCase().includes(searchQ) || r.region.toLowerCase().includes(searchQ) || r.eventType.toLowerCase().includes(searchQ))
+  );
+
+  const riskCards = filtered.map(r => {
+    const ri     = getRiskLevel(r.riskLevel);
+    const barCol = getGeoRiskBarColorByLevel(r.riskLevel);
+    const borderL= r.riskLevel==='Critical'?'border-l-error':r.riskLevel==='High'?'border-l-tertiary':'border-l-primary';
+    return `
+      <div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-all group"
+           data-risk-id="${r.id}" onclick="openDrawer('georisk',geoRiskItems.find(x=>x.id==='${r.id}'))">
+        <div class="border-l-4 ${borderL} p-md">
+          <div class="flex items-start justify-between mb-sm">
+            <div>
+              <p class="text-body-md font-bold text-on-surface group-hover:text-primary transition-colors">${r.countryOrArea}</p>
+              <p class="text-[10px] text-outline">${r.region}</p>
+            </div>
+            <div class="text-right shrink-0 ml-sm">
+              <p class="text-headline-sm font-bold ${ri.colorClass}">${r.riskScore}</p>
+              <p class="text-[10px] font-bold ${ri.colorClass}">${ri.label}</p>
+            </div>
+          </div>
+          <div class="w-full bg-outline-variant h-1.5 rounded-full mb-sm">
+            <div class="${barCol} h-full rounded-full" style="width:${r.riskScore*10}%"></div>
+          </div>
+          <div class="flex items-center justify-between mb-sm">
+            <span class="text-[10px] px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded border border-outline-variant">${r.eventType}</span>
+            <span class="text-[10px] text-outline font-mono-data">${formatTimestamp(r.timestamp)}</span>
+          </div>
+          <p class="text-body-sm text-on-surface-variant leading-snug mb-sm">${r.marketImpact}</p>
+          <div class="flex flex-wrap gap-xs">
+            ${r.affectedSectors.map(s=>`<span class="text-[10px] px-1.5 py-0.5 bg-surface-container-highest text-on-surface-variant rounded border border-outline-variant">${s}</span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }).join('') || '<div class="col-span-full p-lg text-center bg-surface-container border border-outline-variant rounded-lg"><p class="text-body-sm text-on-surface-variant">No risk regions match selected filters.</p></div>';
+
+  const pageEl = document.querySelector('[data-page="georisk"] main');
+  if (!pageEl) return;
+  pageEl.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-sm">
+      <div>
+        <h2 class="text-headline-sm font-bold">Geopolitical Risk Monitor</h2>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Real-time risk tracking across ${geoRiskItems.length} active regions</p>
+      </div>
+      <span class="text-[10px] font-mono-data text-outline px-2 py-0.5 border border-outline-variant rounded">Updated: ${getCurrentLocalTime()}</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg">
+        <p class="text-label-md text-on-surface-variant mb-xs">ACTIVE REGIONS</p>
+        <p class="text-headline-sm font-bold text-on-surface">${geoRiskItems.length}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Currently monitored</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg border-l-4 border-l-error">
+        <p class="text-label-md text-on-surface-variant mb-xs">CRITICAL RISKS</p>
+        <p class="text-headline-sm font-bold text-error">${criticalCount}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Require immediate watch</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg">
+        <p class="text-label-md text-on-surface-variant mb-xs">HIGHEST RISK</p>
+        <p class="text-headline-sm font-bold text-on-surface leading-snug">${highest?.countryOrArea||'—'}</p>
+        <p class="text-body-sm text-error mt-xs font-bold">${highest?.riskScore} · ${highest?.riskLevel}</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg">
+        <p class="text-label-md text-on-surface-variant mb-xs">MOST AFFECTED</p>
+        <p class="text-headline-sm font-bold text-on-surface">${mostAffected}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Highest sector exposure</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-sm items-center">
+      <input id="georisk-search" placeholder="Search region or event type…" oninput="renderGeoRiskPage()"
+             class="bg-surface-container border border-outline-variant rounded px-sm py-xs text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary w-56"/>
+      <div class="flex flex-wrap gap-xs items-center">
+        <span class="text-[10px] text-outline">LEVEL:</span>
+        ${riskTabs}
+      </div>
+      <div class="w-px h-4 bg-outline-variant hidden md:block"></div>
+      <div class="flex flex-wrap gap-xs items-center">
+        <span class="text-[10px] text-outline">SECTOR:</span>
+        ${sectorTabs}
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">${riskCards}</div>`;
+}
+
+// ─── HEADLINES PAGE ───────────────────────────────────────────────────────────
+function getFilteredHeadlines() {
+  let items = [...intelligenceFeed];
+  if (_hlState.search) {
+    const q = _hlState.search.toLowerCase();
+    items = items.filter(i => i.headline.toLowerCase().includes(q) || i.source.toLowerCase().includes(q));
+  }
+  const catMap = {
+    'High Impact': i => i.impact==='High Impact',
+    'Geo Risk':    i => ['Geo Risk','Sanctions','Shipping Chokepoint','Transit Risk','Maritime Insurance Risk'].includes(i.category),
+    'Market Move': i => ['Market Move','Price Movement'].includes(i.category),
+    'Policy':      i => i.category==='Policy',
+    'Supply Chain':i => i.category==='Supply Chain'
+  };
+  if (_hlState.category!=='All' && catMap[_hlState.category]) items = items.filter(catMap[_hlState.category]);
+  if (_hlState.sector!=='All') items = items.filter(i => i.sector===_hlState.sector||(i.relatedSectors||[]).includes(_hlState.sector));
+  if (_hlState.sort==='Highest Impact') {
+    const order = ['High Impact','Medium Impact','Low Impact'];
+    items.sort((a,b) => order.indexOf(a.impact)-order.indexOf(b.impact));
+  } else if (_hlState.sort==='Sector') {
+    items.sort((a,b) => a.sector.localeCompare(b.sector));
+  }
+  return items;
+}
+
+function renderHeadlinesPage() {
+  const items          = getFilteredHeadlines();
+  const totalCount     = intelligenceFeed.length;
+  const highImpact     = intelligenceFeed.filter(i=>i.impact==='High Impact').length;
+  const geoRiskCount   = intelligenceFeed.filter(i=>i.category==='Geo Risk').length;
+  const marketMoveCount= intelligenceFeed.filter(i=>['Market Move','Supply Chain'].includes(i.category)).length;
+
+  const catTabs = ['All','High Impact','Geo Risk','Market Move','Policy','Supply Chain'].map(c => {
+    const on = _hlState.category===c;
+    return `<button class="text-[11px] px-sm py-xs font-bold rounded-sm border transition-colors ${on?'border-primary bg-primary-container/30 text-primary':'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}"
+                    onclick="_hlState.category='${c}';renderHeadlinesPage()">${c}</button>`;
+  }).join('');
+
+  const secTabs = ['All','Crude Oil','Natural Gas','Refined Products','Power','Renewables'].map(s => {
+    const on = _hlState.sector===s;
+    return `<button class="text-[11px] px-sm py-xs rounded-sm border transition-colors ${on?'border-primary text-primary':'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}"
+                    onclick="_hlState.sector='${s}';renderHeadlinesPage()">${s}</button>`;
+  }).join('');
+
+  const sortOpts = ['Newest','Highest Impact','Sector'].map(s=>
+    `<option value="${s}" ${_hlState.sort===s?'selected':''}>${s}</option>`).join('');
+
+  const rows = items.map(h => {
+    const badge    = getImpactBadge(h.impact);
+    const sentCol  = {Bullish:'text-primary',Bearish:'text-error',Neutral:'text-on-surface-variant',Volatile:'text-tertiary','Risk Elevated':'text-tertiary'}[h.sentimentEffect]||'text-on-surface-variant';
+    return `
+      <div class="grid grid-cols-1 md:grid-cols-12 px-md py-sm gap-md hover:bg-surface-container-highest transition-colors cursor-pointer border-b border-outline-variant last:border-b-0 group"
+           data-hl-id="${h.id}">
+        <div class="md:col-span-1 flex flex-col gap-xs">
+          <span class="${badge.bg} ${badge.text} text-[10px] font-bold rounded px-2 py-0.5 self-start">${badge.label}</span>
+          <p class="text-[10px] text-outline font-mono-data">${h.time}</p>
+        </div>
+        <div class="md:col-span-7">
+          <h4 class="text-body-md font-bold text-on-surface group-hover:text-primary transition-colors mb-xs leading-snug">${h.headline}</h4>
+          <div class="flex flex-wrap gap-xs items-center">
+            <span class="text-[10px] text-outline uppercase">${h.source}</span>
+            <span class="w-1 h-1 rounded-full bg-outline-variant inline-block"></span>
+            <span class="text-[10px] px-1.5 py-0.5 bg-surface-container-highest text-on-surface-variant rounded">${h.sector}</span>
+            <span class="text-[10px] ${sentCol}">${h.sentimentEffect}</span>
+          </div>
+        </div>
+        <div class="md:col-span-4 bg-background/40 px-sm py-xs rounded border border-outline-variant/30">
+          <p class="text-[10px] text-primary font-bold mb-0.5">CONTEXT:</p>
+          <p class="text-[11px] text-on-surface-variant leading-snug italic">${h.whyItMatters}</p>
+        </div>
+      </div>`;
+  }).join('') || '<div class="p-lg text-center"><p class="text-body-sm text-on-surface-variant">No headlines match selected filters.</p></div>';
+
+  const pageEl = document.querySelector('[data-page="headlines"] main');
+  if (!pageEl) return;
+  pageEl.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-sm">
+      <div>
+        <h2 class="text-headline-sm font-bold">Intelligence Headlines</h2>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Classified, scored &amp; contextualised energy intelligence</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors" onclick="_hlState.category='All';renderHeadlinesPage()">
+        <p class="text-label-md text-on-surface-variant mb-xs">TOTAL HEADLINES</p>
+        <p class="text-headline-sm font-bold text-on-surface">${totalCount}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Active intelligence items</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg border-l-4 border-l-error cursor-pointer hover:border-primary transition-colors" onclick="_hlState.category='High Impact';renderHeadlinesPage()">
+        <p class="text-label-md text-on-surface-variant mb-xs">HIGH IMPACT</p>
+        <p class="text-headline-sm font-bold text-error">${highImpact}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Require immediate attention</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors" onclick="_hlState.category='Geo Risk';renderHeadlinesPage()">
+        <p class="text-label-md text-on-surface-variant mb-xs">GEO RISK</p>
+        <p class="text-headline-sm font-bold text-tertiary">${geoRiskCount}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Geopolitical events</p>
+      </div>
+      <div class="p-md bg-surface-container border border-outline-variant rounded-lg cursor-pointer hover:border-primary transition-colors" onclick="_hlState.category='Market Move';renderHeadlinesPage()">
+        <p class="text-label-md text-on-surface-variant mb-xs">MARKET MOVES</p>
+        <p class="text-headline-sm font-bold text-primary">${marketMoveCount}</p>
+        <p class="text-body-sm text-on-surface-variant mt-xs">Price &amp; market events</p>
+      </div>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg p-md space-y-sm">
+      <div class="flex items-center gap-sm flex-wrap">
+        <div class="flex-1 min-w-[180px] relative">
+          <span class="gei-icon absolute left-sm top-1/2 -translate-y-1/2 text-outline" style="pointer-events:none"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input id="hl-search" type="text" placeholder="Search headlines, sources..." value="${_hlState.search}"
+                 oninput="_hlState.search=this.value;renderHeadlinesPage()"
+                 class="w-full bg-surface-container-high border border-outline-variant rounded pl-8 pr-sm py-xs text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"/>
+        </div>
+        <select onchange="_hlState.sort=this.value;renderHeadlinesPage()"
+                class="bg-surface-container-high border border-outline-variant rounded px-sm py-xs text-body-sm text-on-surface focus:outline-none focus:border-primary">
+          ${sortOpts}
+        </select>
+      </div>
+      <div class="flex flex-wrap gap-xs items-center">
+        <span class="text-[10px] text-outline shrink-0">TYPE:</span>${catTabs}
+      </div>
+      <div class="flex flex-wrap gap-xs items-center">
+        <span class="text-[10px] text-outline shrink-0">SECTOR:</span>${secTabs}
+      </div>
+    </div>
+    <div class="flex items-center px-xs">
+      <p class="text-[11px] text-outline">${items.length} result${items.length!==1?'s':''} · filtered from ${intelligenceFeed.length} items</p>
+    </div>
+    <div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">${rows}</div>`;
+
+  pageEl.querySelectorAll('[data-hl-id]').forEach(row => {
+    row.addEventListener('click', () => {
+      const item = intelligenceFeed.find(i => i.id === row.dataset.hlId);
+      if (item) openDrawer('feedItem', item);
+    });
+  });
+}
+</script>
+</body>
+</html>
